@@ -42,7 +42,6 @@ def distance(am_track, spf_track):
     b_track = spf_track['title']
     b_artist = spf_track['artist']
     b_album = spf_track['album']
-    b_year = spf_track['release_date']
     dist = anabasis.get_tracks_distance(
         a_track,
         a_artist,
@@ -50,8 +49,7 @@ def distance(am_track, spf_track):
         a_year,
         b_track,
         b_artist,
-        b_album,
-        b_year)
+        b_album)
     return dist
 
 
@@ -127,19 +125,18 @@ def add_tracks_from_CSV(fpath, c_store='JP', s_store='US', _add_tracks=True, _er
     '''
     am_playlist = []
     with open(fpath) as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
+        reader = csv.DictReader(csvfile,skipinitialspace=True, delimiter=',')
         for row in reader:
-            song = {'title': row['title'],
-                    'artist': row['artist'],
-                    'album': row['album'],
-                    'release_date': row['release_date']}
+            print(row)
+            song = {'title': row['Track name'],
+                    'artist': row['Artist name'],
+                    'album': row['Album']}
 
             logging.info(
-                "Searching for track {}, {}, {}, {}".format(
+                "Searching for track {}, {}, {}".format(
                     song['title'],
                     song['artist'],
-                    song['album'],
-                    song['release_date']))
+                    song['album']))
             # candidates (search results) and their usefullness
             # deepends a lot on selected storefront (country and locale).
             candidates = anabasis.searchSongs(
@@ -311,6 +308,9 @@ def getArgs(argv=None):
                         action="store_false",
                         help='''If False don\'t save Spotify playlist as csv. You need this csv so it only makes sense
                         if you process same playlist for a second time.''')
+    parser.add_argument('--from-csv', default=False,
+                        action="store_true",
+                        help='''Import playlist from saved csv files.''')
     parser.add_argument('--xml', default=True,
                         action="store_false",
                         help='If False don\'t create XML with iTunes playlist')
@@ -404,6 +404,7 @@ if __name__ == '__main__':
     logging.info('--- eumenes.py logging started ---.')
 
     args = getArgs()
+    from_csv = args.from_csv
     verbose = not args.quiet
     anabasis.verbose = not args.quiet
     anabasis.delay = args.delay
@@ -411,14 +412,40 @@ if __name__ == '__main__':
     country_store = args.country_store
     search_store = args.search_store
 
-    spotify_uri = args.playlist
-    oa2 = oauth2.SpotifyClientCredentials(
-        client_id='768998a7e3444c6a82f0c11ddd59c946',
-        client_secret='4b1e7672e14a42269ee4a22e11214fdf')
-    token = oa2.get_access_token()
-    sp = spotipy.Spotify(auth=token)
+    if from_csv:
+      pl_path = args.playlist
+      _am=args.am
+      _xml=args.xml
+      _e=args.error
+      _a=args.auto
+      _t=args.treshold
+      am_pl = add_tracks_from_CSV(
+          pl_path,
+          c_store=country_store,
+          s_store=search_store,
+          _add_tracks=_am,
+          _err=_e,
+          _auto=_a,
+          _treshold=_t)
+      if _xml:
+          xml_pl = buildXML(am_pl, _title=playlist['name'], _description=pl_desc)
+      logging.info(xml_pl)
+      xml_path = "AM-playlists/{}.xml".format(pl_name)
+      print('\n---')
+      with open(xml_path, "w") as xmlf:
+          xmlf.write(xml_pl)
+      print(
+          "Done.\nYou can import your playlist [iTunes Menu: File-Library-Import Playlist] from {}".format(
+              xml_path))
+    else:
+      spotify_uri = args.playlist
+      oa2 = oauth2.SpotifyClientCredentials(
+          client_id='768998a7e3444c6a82f0c11ddd59c946',
+          client_secret='4b1e7672e14a42269ee4a22e11214fdf')
+      token = oa2.get_access_token()
+      sp = spotipy.Spotify(auth=token)
 
-    process(_csv=args.csv, _am=args.am, _xml=args.xml,
-            _e=args.error, _a=args.auto, _t=args.treshold, _d=args.delay)
+      process(_csv=args.csv, _am=args.am, _xml=args.xml,
+              _e=args.error, _a=args.auto, _t=args.treshold, _d=args.delay)
 
-    logging.info('--- eumenes.py logging finished ---.')
+      logging.info('--- eumenes.py logging finished ---.')

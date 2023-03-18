@@ -116,7 +116,7 @@ def aceh_distance(a, b):
 
 
 def get_tracks_distance(a_track, a_artist, a_album, a_year,
-                        b_track, b_artist, b_album, b_year):
+                        b_track, b_artist, b_album):
     '''
     Computes time-lexical distance between two tracks based on
     track title, artist, album name, and release date
@@ -124,13 +124,12 @@ def get_tracks_distance(a_track, a_artist, a_album, a_year,
     d_track = pow(ro_distance(a_track, b_track), 2)
     d_artist = pow(ro_distance(a_artist, b_artist), 2)
     d_album = pow(ro_distance(a_album, b_album), 2)
-    d_years = pow(aceh_distance(a_year, b_year), 2)
     # something else then euclidean metric ? TODO
-    d_ = math.sqrt(math.fsum([d_track, d_artist, d_album, d_years])) / 2.0
+    d_ = math.sqrt(math.fsum([d_track, d_artist, d_album])) / 2.0
     if verbose:
         logging.info(
-            "{:6.4f}, {:6.4f}, {:6.4f}, {:6.4f} == {:6.4f}".format(
-                d_track, d_artist, d_album, d_years, d_))
+            "{:6.4f}, {:6.4f}, {:6.4f} == {:6.4f}".format(
+                d_track, d_artist, d_album, d_))
 
     return d_
 
@@ -249,7 +248,7 @@ def displayCandidates(candidates, song, pageStart, nSongs):
     for i, s in enumerate(candidates):
         d = get_tracks_distance(s["trackName"], s["artistName"], s["collectionCensoredName"],
             str(s['releaseDate']), song['title'],
-            song['artist'], song['album'], song['release_date'])
+            song['artist'], song['album'])
         print(fmtStr.format(
             i + pageStart, d, s["trackName"], s["artistName"], s["collectionCensoredName"]))
 
