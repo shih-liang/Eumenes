@@ -117,7 +117,7 @@ def dump_csv(songs, fpath):
         print("\nSaved to {}".format(fpath))
 
 
-def add_tracks_from_CSV(fpath, c_store='JP', s_store='US', _add_tracks=True, _err=0.11, _auto=True, _treshold=0.4,
+def add_tracks_from_CSV(fpath, c_store='US', s_store='US', _add_tracks=True, _err=0.11, _auto=True, _treshold=0.4,
         _delay=5):
     '''
     match Spotify tracks with iTunes/Apple Music tracks and add selected tracks
@@ -176,14 +176,10 @@ def add_tracks_from_CSV(fpath, c_store='JP', s_store='US', _add_tracks=True, _er
                     is within {:4.2f}'''.format(selected['trackId'], selected['trackName'], _auto, dist, _treshold))
                 # or else let user select or pass
                 else:
-                    selected = anabasis.selectSong(candidates, song)
-                    if selected is None:
-                        logging.info('User skiped this track!')
-                        continue
-                    else:
-                        logging.info("User manually selected track {} - {}".format(selected['trackId'],
-                            selected['trackName']))
-            if verbose and selected is not None:
+                    #selected = anabasis.selectSong(candidates, song)
+                    selected = candidates[0:3]
+
+            if selected is not None and not isinstance(selected, list):
                 # logging.info(selected)
                 logging.info("Selected track {} - {}, {}, {}".format(selected['trackId'],
                     selected['trackName'],
@@ -192,13 +188,17 @@ def add_tracks_from_CSV(fpath, c_store='JP', s_store='US', _add_tracks=True, _er
                 print(
                     "Selected: {} - {}".format(selected['trackName'], selected['artistName']))
 
-            itunes_id = selected['trackId']
-            if _add_tracks:
-                if addTrack(itunes_id, c_store):
-                    am_playlist.append(selected)
-                    sleep(_delay)
-            else:
                 am_playlist.append(selected)
+            elif isinstance(selected, list):
+                for selected in selected:
+                    logging.info("Selected track {} - {}, {}, {}".format(selected['trackId'],
+                        selected['trackName'],
+                        selected['artistName'], 
+                        selected['collectionName']))
+                    print(
+                        "Selected: {} - {}".format(selected['trackName'], selected['artistName']))
+
+                    am_playlist.append(selected)
 
     return am_playlist
 
@@ -380,7 +380,8 @@ def process(_csv=True, _am=True, _xml=True, _e=0.11, _a=True, _t=0.4, _d=5):
         _add_tracks=_am,
         _err=_e,
         _auto=_a,
-        _treshold=_t)
+        _treshold=_t,
+        _delay=_d)
     if _xml:
         xml_pl = buildXML(am_pl, _title=playlist['name'], _description=pl_desc)
     logging.info(xml_pl)
@@ -426,11 +427,12 @@ if __name__ == '__main__':
           _add_tracks=_am,
           _err=_e,
           _auto=_a,
-          _treshold=_t)
+          _treshold=_t,
+          _delay=args.delay)
       if _xml:
-          xml_pl = buildXML(am_pl, _title=playlist['name'], _description=pl_desc)
+          xml_pl = buildXML(am_pl, _title="Fav", _description="")
       logging.info(xml_pl)
-      xml_path = "AM-playlists/{}.xml".format(pl_name)
+      xml_path = "AM-playlists/{}.xml".format("pl_name")
       print('\n---')
       with open(xml_path, "w") as xmlf:
           xmlf.write(xml_pl)

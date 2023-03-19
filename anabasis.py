@@ -212,8 +212,9 @@ def get_best_match(a_track, a_artist, a_album, a_year, tracks):
 def searchSongs(title, artist, album, _country='US'):
     headers = _headers(_country)
     # TODO - clean up album and title a little (Remix, Deluxe Edition etc.)
-    query_string = "{} {} {}".format(title, artist, album)
-    query = urlencode({"term": query_string, "entity": "song", "s": _storefront(_country)})
+    query_string = "{} {}".format(title, artist)
+    query = urlencode({"term": query_string, "entity": "song", "country": _country, 'limit': 3})
+    print("https://itunes.apple.com/search?{}".format(query))
     try:
         resp = requests.get(
             "https://itunes.apple.com/search?{}".format(query), timeout=60, headers=headers)
